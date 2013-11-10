@@ -6,7 +6,7 @@ import xbmcgui
 from traceback import print_exc
 from xbmcaddon import Addon
 
-ADDON             = Addon( "plugin.video.illicoweb" )
+addon             = Addon( "plugin.video.illicoweb" )
 
 g_thumbnail = unicode( xbmc.getInfoImage( "ListItem.Thumb" ), "utf-8" )
 #set our str watched
@@ -14,7 +14,7 @@ g_strwatched = xbmc.getInfoLabel( "ListItem.Property(strwatched)" )
 
 def setWatched( listitem ):
     try:
-        sys.modules[ 'resources.lib.illicoweb' ].setWatched( g_strwatched, refresh=False )
+        sys.modules[ 'resources.lib.illicoweb' ].setWatched( g_strwatched, refresh=True )
         listitem.setInfo( "video", { "playcount": 1 } )
     except: print_exc()
 
@@ -57,32 +57,12 @@ def playVideo( details, startoffset=None, strwatched=None, listitem=None ):
     if not g_strwatched and strwatched is not None:
         g_strwatched = strwatched
 
-    
-    '''playlist = xbmc.PlayList( xbmc.PLAYLIST_VIDEO )
-    playlist.clear()
-
-    listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png", g_thumbnail )
-    listitem.setInfo( "Video", infoLabels )
-
-    #listitem.setProperty( "PlayPath", playpath )
-    listitem.setProperty( "PID", PID )
-
-    if str( startoffset ).isdigit():
-        listitem.setProperty( "startoffset", str( startoffset ) ) #in second'''
-
+    setWatched( listitem )
+        
     # play media
     player = illicoPlayer( xbmc.PLAYER_CORE_DVDPLAYER )
     player._play(details['url'],details['item'] )
 
-    #setWatched( listitem )
-
-    #player = xbmc.Player( xbmc.PLAYER_CORE_DVDPLAYER )
-    #player.play( video, listitem )
-    
-    #playlist.add(video, listitem)
-
-    #xbmc.Player().play()
-    
 
 if ( __name__ == "__main__" ):
     try:
