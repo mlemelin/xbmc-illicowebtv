@@ -353,7 +353,7 @@ class Main( viewtype ):
 
         if listitems:
             listitems = self.natural_sort(listitems, True)
-            OK = self._add_directory_items( listitems )
+        OK = self._add_directory_items( listitems )
         self._set_content( OK, "movies", False )
         
     def _addEpisodes(self, ep, listitems):
