@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!-- Addon basé sur le travail de Dany Côté pour le plugin vtélé -->
 <!-- Addon basé sur le plugin mlbtv -->
-<addon id="plugin.video.illicoweb" name="Illicoweb TV" version="0" provider-name="mlemelin@gmail.com">
+<!-- Adapté pour nouvel illicoweb du 7 novembre 2013 par Mathieu Arseneault -->
+<addon id="plugin.video.illicoweb" name="Illicoweb TV" version="1.0" provider-name="mlemelin@gmail.com">
   <requires>
     <import addon="xbmc.python" version="2.0"/>
   </requires>
