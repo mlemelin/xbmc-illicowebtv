@@ -44,7 +44,7 @@ debug = addon.getSetting('debug')
 ADDON_NAME        = addon.getAddonInfo( "name" )
 
 def addon_log(string):
-    if debug == 'true':
+    if debug == True:
         xbmc.log("[Illicoweb-%s]: %s" %(addon_version, string))
 
 def getRequest(url, data=None, headers=None):
@@ -190,7 +190,7 @@ class Main( viewtype ):
                     self._addShowToChannel(i, listitems, fanart)
             if listitems:
                 # Sort list by ListItem Label
-                listitems = sorted(listitems,key=lambda item: item[1].getLabel())
+                listitems = self.natural_sort(listitems, False) 
                 OK = self._add_directory_items( listitems )
                 self._set_content( OK, "movies", False )
 
@@ -236,7 +236,7 @@ class Main( viewtype ):
                 
             if listitems:
                 from operator import itemgetter
-                listitems = sorted(listitems,key=lambda item: item[1].getLabel(),reverse=True)
+                listitems = self.natural_sort(listitems, True)
                 OK = self._add_directory_items( listitems )
             self._set_content( OK, "movies", False )
 
@@ -256,7 +256,8 @@ class Main( viewtype ):
             url = 'https://illicoweb.videotron.com/illicoservice'+unquote_plus(sections[1]['contentDownloadURL'].replace( " ", "+" ))
             data = getRequest(url,urllib.urlencode(values),headers)
             
-            season = xbmc.getInfoLabel( "ListItem.Property(season)" )
+            season = xbmc.getInfoLabel( "ListItem.Property(seasonNo)" )
+            addon_log("Season: " + season)
             self._addEpisodesToSeason(data, season)
 
         elif self.args.category == "direct":
@@ -337,7 +338,7 @@ class Main( viewtype ):
     def _addEpisodesToSeason(self, data, season):
         seasons = simplejson.loads(data)['body']['SeasonHierarchy']['seasons']
         listitems = []
-        
+
         # [body][SeasonHierarchy][seasons] seasons
         for i in seasons:
             if(str(i['seasonNo']) == season):
@@ -351,7 +352,7 @@ class Main( viewtype ):
                 self._addEpisodes(ep, listitems)
 
         if listitems:
-            listitems = sorted(listitems,key=lambda item: item[1].getLabel(),reverse=True)
+            listitems = self.natural_sort(listitems, True)
             OK = self._add_directory_items( listitems )
         self._set_content( OK, "movies", False )
         
@@ -657,7 +658,23 @@ class Main( viewtype ):
         c_items += [ ( LangXBMC( 1045 ), "Addon.OpenSettings(xbmc-illicowebtv-master)" ) ]
 
         listitem.addContextMenuItems( c_items, replaceItems )        
-        
+
+    def natsort_key(self, item):
+        chunks = re.split('(\d+(?:\.\d+)?)', item[1].getLabel())
+        for ii in range(len(chunks)):
+            if chunks[ii] and chunks[ii][0] in '0123456789':
+                if '.' in chunks[ii]: numtype = float
+                else: numtype = int
+                chunks[ii] = (0, numtype(chunks[ii]))
+            else:
+                chunks[ii] = (1, chunks[ii])
+        return (chunks, item)
+
+    def natural_sort(self, seq, reverseBool):
+        sortlist = [item for item in seq]
+        sortlist.sort(key=self.natsort_key, reverse = reverseBool)
+        return sortlist
+            
 class Info:
     def __init__( self, *args, **kwargs ):
         # update dict with our formatted argv
