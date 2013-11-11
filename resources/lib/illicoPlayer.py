@@ -15,7 +15,8 @@ g_strwatched = xbmc.getInfoLabel( "ListItem.Property(strwatched)" )
 def setWatched( listitem ):
     try:
         sys.modules[ 'resources.lib.illicoweb' ].setWatched( g_strwatched, refresh=True )
-        listitem.setInfo( "video", { "playcount": 1 } )
+        if listitem:
+            listitem.setInfo( "video", { "playcount": 1 } )
     except: print_exc()
 
 class XBMCPlayer( xbmc.Player ):

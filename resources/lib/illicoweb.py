@@ -11,7 +11,6 @@ import xbmcplugin
 import xbmcgui
 import xbmcaddon
 import xbmcvfs
-import StorageServer
 import simplejson
 
 from urllib import quote_plus, unquote_plus
@@ -35,7 +34,6 @@ icon = os.path.join(home, 'icon.png')
 cookie_file = os.path.join(profile, 'cookie_file')
 cookie_jar = cookielib.LWPCookieJar(cookie_file)
 
-#cache = StorageServer.StorageServer("illicoweb", 2)
 debug = addon.getSetting('debug')
 #if debug == 'true':
 #    cache.dbg = True
@@ -163,7 +161,7 @@ class Main( viewtype ):
 
         elif self.args.episode:
             self._checkCookies()
-            self._playEpisode(self.args.episode)
+            self._playEpisode(unquote_plus(self.args.episode).replace( " ", "+" ))
 
         elif self.args.channel:
             url = 'http://illicoweb.videotron.com/illicoservice/url?logicalUrl='+unquote_plus(self.args.channel).replace( " ", "+" )
@@ -247,8 +245,12 @@ class Main( viewtype ):
                     'Referer' : 'https://illicoweb.videotron.com/accueil'}
             values = {}
 
+            url = unquote_plus(self.args.season).replace( " ", "+" )
+            season = url[url.rfind(',') + 1:]
+            url = url[:url.rfind(',')]
+
             # url format: http://illicoweb.videotron.com/illicoservice/url?logicalUrl=/channels/<channelName>/<showID>/<showName>
-            url = 'http://illicoweb.videotron.com/illicoservice/url?logicalUrl='+unquote_plus(self.args.season).replace( " ", "+" )
+            url = 'http://illicoweb.videotron.com/illicoservice/url?logicalUrl='+url
             data = getRequest(url,urllib.urlencode(values),headers)
 
             sections = simplejson.loads(data)['body']['main']['sections']
@@ -256,8 +258,7 @@ class Main( viewtype ):
             url = 'https://illicoweb.videotron.com/illicoservice'+unquote_plus(sections[1]['contentDownloadURL'].replace( " ", "+" ))
             data = getRequest(url,urllib.urlencode(values),headers)
             
-            season = xbmc.getInfoLabel( "ListItem.Property(seasonNo)" )
-            addon_log("Season: " + season)
+            #season = xbmc.getInfoLabel( "ListItem.Property(seasonNo)" )
             self._addEpisodesToSeason(data, season)
 
         elif self.args.category == "direct":
@@ -353,7 +354,7 @@ class Main( viewtype ):
 
         if listitems:
             listitems = self.natural_sort(listitems, True)
-        OK = self._add_directory_items( listitems )
+            OK = self._add_directory_items( listitems )
         self._set_content( OK, "movies", False )
         
     def _addEpisodes(self, ep, listitems):
@@ -363,8 +364,8 @@ class Main( viewtype ):
         try:
             uri = sys.argv[ 0 ]
             item = ( label,     '', 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/thumb/'  + ep['image']) #'DefaultAddonSubtitles.png')
-            url = '%s?episode="%s"' %( uri, seasonUrl  )
-
+            url = '%s?episode="%s"' %( uri, unquote_plus(seasonUrl.replace( " ", "+" ) ) )
+            
             infoLabels = {
                 "tvshowtitle": label,
                 "title":       label
@@ -404,7 +405,8 @@ class Main( viewtype ):
         
     def _addSeasonsToShow(self, i, listitems):
         label = 'Saison ' + str(i['seasonNo'])
-        seasonUrl = i['link']['uri']
+        seasonUrl = i['link']['uri'] + ',' + str(i['seasonNo'])
+
         OK = False
         try:
             uri = sys.argv[ 0 ]
@@ -438,7 +440,7 @@ class Main( viewtype ):
             
             listitem.setInfo( "Video", infoLabels )
 
-            listitem.setProperty( 'seasonNo', str(i['seasonNo']))
+            #listitem.setProperty( 'seasonNo', str(i['seasonNo']))
             listitem.setProperty( 'playLabel', label )
             listitem.setProperty( 'playThumb', 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/thumb/' + i['image'] )
             listitem.setProperty( "fanart_image", xbmc.getInfoLabel( "ListItem.Property(fanart_image)" )) #'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/thumb/' + i['image'])
@@ -544,7 +546,7 @@ class Main( viewtype ):
         
         rtmp = path[:path.rfind('/')]
         playpath = ' Playpath=' + path[path.rfind('/')+1:]
-        pageurl = ' pageUrl=' + self.args.episode
+        pageurl = ' pageUrl=' + unquote_plus(self.args.episode).replace( " ", "+" )
         swfurl = ' swfUrl=https://illicoweb.videotron.com/swf/vplayer_v1-3_215_prd.swf swfVfy=1'
         
         if 'live' in options.keys() and options['live']:
