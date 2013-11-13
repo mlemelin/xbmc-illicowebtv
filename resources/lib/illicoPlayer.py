@@ -6,7 +6,7 @@ import xbmcgui
 from traceback import print_exc
 from xbmcaddon import Addon
 
-addon             = Addon( "plugin.video.illicoweb" )
+ADDON = Addon( "plugin.video.illicoweb" )
 
 g_thumbnail = unicode( xbmc.getInfoImage( "ListItem.Thumb" ), "utf-8" )
 #set our str watched
