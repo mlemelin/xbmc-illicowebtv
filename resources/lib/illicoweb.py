@@ -24,7 +24,7 @@ from urlparse import urlparse
 
 ADDON = xbmcaddon.Addon(id='plugin.video.illicoweb')
 ADDON_NAME = ADDON.getAddonInfo( "name" )
-ADDON_VERSION = "3"
+ADDON_VERSION = "1.1"
 ADDON_CACHE = xbmc.translatePath( ADDON.getAddonInfo( "profile" ) )
 CACHE_EXPIRE_TIME = float( ADDON.getSetting( "expiretime" ).replace( "0", ".5" ).replace( "25", "0" ) )
 
