@@ -4,6 +4,7 @@ xbmc-illicowebtv
 XMBC Addon for Canadian Videotron Illico Web Tv Service
 
 ** ATTENTION **
+---------------
 Le nouveau système d'Illico implanté le 7 novembre 2013 peut ne pas être parfaitement supporté par votre version de XBMC.  Si l'écoute gel au bout de quelques secondes, vous devez mettre à jour LIBRTMP.DLL en suivant les instructions officielle de XBMC.org:
 http://wiki.xbmc.org/index.php?title=HOW-TO:Update_librtmp
 
