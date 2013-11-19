@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
   <!-- General -->
-  <category label="Compete">
+  <category label="Général">
 
     <setting label="Usager" type="text"   id="username" enable="!eq(-1,)" default=""/>
     <setting label="Mot de passe" type="text"   id="password" option="hidden"  enable="!eq(-1,)" default=""/>
     
     <setting type="sep" />
-    <setting id="expiretime" type="enum" label="Expire Time" values="30 Minutes|1 Hour|2 Hours|3 Hours|4 Hours|5 Hours|6 Hours|7 Hours|8 Hours|9 Hours|10 Hours|11 Hours|12 Hours|13 Hours|14 Hours|15 Hours|16 Hours|17 Hours|18 Hours|19 Hours|20 Hours|21 Hours|22 Hours|23 Hours|24 Hours|None" default="24" />
+    <setting label="Reprendre la position de lecture" type="bool" id="resume" default="true"/>
     <setting label="Activer déboggage" type="bool" id="debug" default="false"/>
 
     </category>

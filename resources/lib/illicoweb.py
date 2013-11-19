@@ -7,7 +7,6 @@ import cookielib
 import urllib
 import urllib2
 import xbmc
-import xbmcplugin
 import xbmcgui
 import xbmcaddon
 import xbmcvfs
@@ -24,45 +23,42 @@ from urlparse import urlparse
 
 ADDON = xbmcaddon.Addon(id='plugin.video.illicoweb')
 ADDON_NAME = ADDON.getAddonInfo( "name" )
-ADDON_VERSION = "1.1"
+ADDON_VERSION = "1.2"
 ADDON_CACHE = xbmc.translatePath( ADDON.getAddonInfo( "profile" ) )
-CACHE_EXPIRE_TIME = float( ADDON.getSetting( "expiretime" ).replace( "0", ".5" ).replace( "25", "0" ) )
+
+COOKIE = os.path.join(ADDON_CACHE, 'cookie')
+COOKIE_JAR = cookielib.LWPCookieJar(COOKIE)
+
+ICON = os.path.join(xbmc.translatePath(ADDON.getAddonInfo('path')), 'icon.png')
+FAVOURITES_XML = os.path.join( ADDON_CACHE, "favourites.xml" )
+
+USERNAME = ADDON.getSetting( "username" )
+PASSWORD = ADDON.getSetting( "password" )
+DEBUG = ADDON.getSetting('debug')
 
 LangXBMC    = xbmc.getLocalizedString
-
-username = ADDON.getSetting( "username" )
-password = ADDON.getSetting( "password" )
-profile = xbmc.translatePath(ADDON.getAddonInfo('profile'))
-home = xbmc.translatePath(ADDON.getAddonInfo('path'))
-language = ADDON.getLocalizedString
-icon = os.path.join(home, 'icon.png')
-
-FAVOURITES_XML = os.path.join( profile, "favourites.xml" )
-
-cookie_file = os.path.join(profile, 'cookie_file')
-cookie_jar = cookielib.LWPCookieJar(cookie_file)
-
-DEBUG = ADDON.getSetting('debug')
+Language = ADDON.getLocalizedString
 
 def addon_log(string):
     if DEBUG == 'true':
         xbmc.log("[Illicoweb-%s]: %s" %(ADDON_VERSION, string))
 
+
 def getRequest(url, data=None, headers=None):
-    if not xbmcvfs.exists(cookie_file):
-        addon_log('Creating cookie_file!')
-        cookie_jar.save()
+    if not xbmcvfs.exists(COOKIE):
+        addon_log('Creating COOKIE!')
+        COOKIE_JAR.save()
     if headers is None:
         headers = {'User-agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0',
                    'Referer' : 'http://illicoweb.videotron.com'}
-    cookie_jar.load(cookie_file, ignore_discard=True, ignore_expires=True)
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
+    COOKIE_JAR.load(COOKIE, ignore_discard=True, ignore_expires=True)
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(COOKIE_JAR))
     urllib2.install_opener(opener)
     try:
         req = urllib2.Request(url,data,headers)
         response = urllib2.urlopen(req)
         data = response.read()
-        cookie_jar.save(cookie_file, ignore_discard=True, ignore_expires=False)
+        COOKIE_JAR.save(COOKIE, ignore_discard=True, ignore_expires=False)
         response.close()
         addon_log("getRequest : %s" %url)
         #addon_log(response.info())
@@ -82,7 +78,7 @@ def getRequest(url, data=None, headers=None):
             if 'highlights.xml' in url:
                 return
         if reason:
-            xbmc.executebuiltin("XBMC.Notification("+language(30015)+","+language(30019)+reason+",10000,"+icon+")")
+            xbmc.executebuiltin("XBMC.Notification("+Language(30015)+","+Language(30019)+reason+",10000,"+ICON+")")
         return  
 
 def getWatched():
@@ -122,6 +118,7 @@ def setWatched( strwatched, remove=False, refresh=True ):
     except:
         print_exc()
     if refresh:
+        addon_log("Refreshing directory after setting watched status")
         xbmc.executebuiltin( 'Container.Refresh' )
  
 if re.search( '(GetCarrousel|"carrousel")', sys.argv[ 2 ] ):
@@ -162,7 +159,7 @@ class Main( viewtype ):
                     for ep in i['episodes']:
                         setWatched( ep['orderURI'] + '*' + ep['title'], bool( self.args.setunwatched ), False)
                 
-                xbmc.executebuiltin( 'Container.Refresh' )
+                #xbmc.executebuiltin( 'Container.Refresh' )
             else: setWatched( strwatched, bool( self.args.setunwatched ) )
 
         elif self.args.addtofavourites or self.args.removefromfavourites:
@@ -224,6 +221,7 @@ class Main( viewtype ):
                 return
                 
             listitems = livelist + listitems
+            addon_log("Adding Shows to Channel")
             OK = self._add_directory_items( listitems )
             self._set_content( OK, "movies", False )
 
@@ -234,6 +232,7 @@ class Main( viewtype ):
             if listitems:
                 from operator import itemgetter
                 listitems = self.natural_sort(listitems, True)
+                addon_log("Adding Seasons to Show")
                 OK = self._add_directory_items( listitems )
             self._set_content( OK, "movies", False )
 
@@ -293,10 +292,11 @@ class Main( viewtype ):
 
         if listitems:
             listitems = self.natural_sort(listitems, True)
+            addon_log("Adding Episodes to Season")
             OK = self._add_directory_items( listitems )
         self._set_content( OK, "movies", False )
     
-    def _addEpisodes(self, ep, listitems):
+    def _addEpisode(self, ep, listitems):
         label = ep['title']
         seasonUrl = ep['orderURI']
         OK = False
@@ -569,17 +569,6 @@ class Main( viewtype ):
         data = getRequest(url,urllib.urlencode(values),headers)
         data = self._getChannelShowsJSON(data)
         
-        '''url = 'http://illicoweb.videotron.com/illicoservice'+unquote_plus(url).replace( " ", "+" )
-        headers = {'User-agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0',
-                   'Referer' : 'https://illicoweb.videotron.com/accueil'}
-        values = {}
-        
-        data = getRequest(url,urllib.urlencode(values),headers)
-        data = self._getChannelShowsJSON(data)
-        # No onDemand content? do nothing
-        if data is None:
-            return'''
-            
         shows = simplejson.loads(data)['body']['main']['submenus']   
 
         for i in shows:
@@ -591,7 +580,7 @@ class Main( viewtype ):
                 if i['label'] == label:
                     return i
     
-    def _getEpisodes(self, data, season):
+    def _getEpisodes(self, data, season, title=None):
         seasons = simplejson.loads(data)['body']['SeasonHierarchy']['seasons']
         listitems = []
 
@@ -599,13 +588,18 @@ class Main( viewtype ):
         for i in seasons:
             if(str(i['seasonNo']) == season):
                 for ep in i['episodes']:
-                    self._addEpisodes(ep, listitems)
-
+                    if title:
+                        if title == ep['title']:
+                            self._addEpisode(ep, listitems)
+                    else: self._addEpisode(ep, listitems)
         # [body][main] seasons
         i = simplejson.loads(data)['body']['main']
         if(str(i['seasonNo']) == season):
             for ep in i['episodes']:
-                self._addEpisodes(ep, listitems)
+                if title:
+                    if title == ep['title']:
+                        self._addEpisode(ep, listitems)
+                else: self._addEpisode(ep, listitems)
 
         return listitems    
 
@@ -648,9 +642,9 @@ class Main( viewtype ):
     # [ End of scrappers -------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------
     
-    def _playLive(self, url):
+    def _playLive(self, pid):
         self._checkCookies()
-        url = 'https://illicoweb.videotron.com/illicoservice'+url
+        url = 'https://illicoweb.videotron.com/illicoservice'+pid
         addon_log("Live show at: %s" %url)
         headers = {'User-agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0',
                    'Referer' : 'https://illicoweb.videotron.com/accueil'}
@@ -658,21 +652,21 @@ class Main( viewtype ):
         data = getRequest(url,urllib.urlencode(values),headers)
         options = {'live': '1'}
 
-        if not (self._checkEpisode(data,options)):
+        if not (self._play(data, pid, options)):
             addon_log("episode error")
     
     
-    def _playEpisode(self, url):
-        url = 'https://illicoweb.videotron.com/illicoservice'+unquote_plus(url).replace( " ", "+" )
+    def _playEpisode(self, pid):
+        url = 'https://illicoweb.videotron.com/illicoservice'+unquote_plus(pid).replace( " ", "+" )
         headers = {'User-agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0',
                    'Referer' : 'https://illicoweb.videotron.com/accueil'}
         values = {}
         data = getRequest(url,urllib.urlencode(values),headers)
 
-        if not (self._checkEpisode(data)):
+        if not (self._play(data, pid)): #unquote_plus(pid).replace( " ", "+" ))):
             addon_log("episode error")
     
-    def _checkEpisode(self, data, options={}):
+    def _play(self, data, pid, options={}):
         path = simplejson.loads(data)['body']['main']['mainToken']
         
         rtmp = path[:path.rfind('/')]
@@ -680,27 +674,38 @@ class Main( viewtype ):
         pageurl = ' pageUrl=' + unquote_plus(self.args.episode).replace( " ", "+" )
         swfurl = ' swfUrl=https://illicoweb.videotron.com/swf/vplayer_v1-3_215_prd.swf swfVfy=1'
         
+        win = xbmcgui.Window(10000)
+        win.setProperty('illico.playing.title', xbmc.getInfoLabel( "ListItem.Property(playLabel)" ))
+        win.setProperty('illico.playing.pid', unquote_plus(pid).replace( " ", "+" ))
+        win.setProperty('illico.playing.watched', xbmc.getInfoLabel( "ListItem.Property(strwatched)" ))
+        
         if 'live' in options.keys() and options['live']:
             live = ' live=1'
+            win.setProperty('illico.playing.live', 'true')
         else:
             live = ''
-
+            win.setProperty('illico.playing.live', 'false')
+        
         final_url = rtmp+playpath+pageurl+swfurl+live
-        
+        addon_log('Attempting to play url: %s' % final_url)
+    
         item = xbmcgui.ListItem(xbmc.getInfoLabel( "ListItem.Property(playLabel)" ), '', xbmc.getInfoLabel( "ListItem.Property(playThumb)" ), xbmc.getInfoLabel( "ListItem.Property(playThumb)" ))
+        item.setProperty('IsPlayable', 'true')
+        item.setPath(final_url)
+        
+        player = xbmc.Player( xbmc.PLAYER_CORE_DVDPLAYER )
+        player.play(final_url, item)
+        
+        return True
 
-        import illicoPlayer as player
-        try: player.playVideo( {'url':final_url,'item':item}, startoffset=0 )
-        except: print_exc()
         
-        return True 
-        
+               
     def _checkCookies(self):
         # Check if cookies have expired.
-        cookie_jar.load(cookie_file, ignore_discard=True, ignore_expires=False)
+        COOKIE_JAR.load(COOKIE, ignore_discard=True, ignore_expires=False)
         cookies = {}
         addon_log('These are the cookies we have in the cookie file:')
-        for i in cookie_jar:
+        for i in COOKIE_JAR:
             cookies[i.name] = i.value
             addon_log('%s: %s' %(i.name, i.value))
         if cookies.has_key('iPlanetDirectoryPro'):
@@ -720,16 +725,16 @@ class Main( viewtype ):
             data = getRequest(url,None,None)
             addon_log('These are the cookies we have after https://illicoweb.videotron.com/accueil:')
 
-        cookie_jar.load(cookie_file, ignore_discard=True, ignore_expires=True)
+        COOKIE_JAR.load(COOKIE, ignore_discard=True, ignore_expires=True)
         cookies = {}
-        for i in cookie_jar:
+        for i in COOKIE_JAR:
             cookies[i.name] = i.value
             addon_log('%s: %s' %(i.name, i.value))
 
     def _login(self):
             addon_log('Login to get cookies!')
 
-            if not username or not password:
+            if not USERNAME or not PASSWORD:
                 xbmcgui.Dialog().ok(ADDON_NAME, "Votre nom d'usager ou mot de passe est incorrect.\nAllez dans les options du plugin pour les mettre à jour.")
                 exit(0)
 
@@ -739,7 +744,7 @@ class Main( viewtype ):
             login = getRequest(url,None,headers)
 
             # now authenticate
-            url = 'https://illicoweb.videotron.com/illicoservice/authenticate?localLang=fr&password='+password+'&userId='+username
+            url = 'https://illicoweb.videotron.com/illicoservice/authenticate?localLang=fr&password='+PASSWORD+'&userId='+USERNAME
             headers = {'User-agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0',
                        'Referer' : 'https://illicoweb.videotron.com/accueil',
                        'X-Requested-With' : 'XMLHttpRequest'}
@@ -747,10 +752,10 @@ class Main( viewtype ):
             values = {}
             login = getRequest(url,urllib.urlencode(values),headers)
 
-            cookie_jar.load(cookie_file, ignore_discard=False, ignore_expires=False)
+            COOKIE_JAR.load(COOKIE, ignore_discard=False, ignore_expires=False)
             cookies = {}
             addon_log('These are the cookies we have received from authenticate.do:')
-            for i in cookie_jar:
+            for i in COOKIE_JAR:
                 cookies[i.name] = i.value
                 addon_log('%s: %s' %(i.name, i.value))
 
@@ -797,12 +802,12 @@ class Main( viewtype ):
                     i = self._getSeasons(url, seasonNo)
                     if i:
                         self._addSeasonsToShow(i, listitems, True)
-                        
+                
         except:
             print_exc()
 
         if listitems:
-            addon_log("Creating directory items")
+            addon_log("Adding Favourites")
             OK = self._add_directory_items( listitems )
         self._set_content( OK, "movies", False )                
                 
@@ -823,7 +828,6 @@ class Main( viewtype ):
             item = ('-- Mes Favoris IllicoTV --', '', 'DefaultAddonScreensaver.png')
             listitem = xbmcgui.ListItem( *item )
             listitem.setProperty( "fanart_image", 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/custom/presse1.jpg')
-            #self._add_context_menu_items( [], listitem, False )
             url = '%s?favoris="root"' %uri 
             listitems.append(( url, listitem, True ))
         
@@ -832,6 +836,7 @@ class Main( viewtype ):
             self._addChannel(listitems, i, '%s?channel="%s"')
 
         if listitems:
+            addon_log("Adding Channels to Root")
             OK = self._add_directory_items( listitems )
         self._set_content( OK, "movies", False )
 
@@ -843,13 +848,14 @@ class Main( viewtype ):
             c_items = [] #[ ( LangXBMC( 20351 ), "Action(Info)" ) ]
 
             #add to my favoris
-            f = { 'label' : quote_plus(label.encode("utf8")), 'category' : category, 'url' : url}
-            uri = '%s?addtofavourites="%s"' % ( sys.argv[ 0 ], urllib.urlencode(f) ) #favourite.encode('utf8').replace('"', '*' ))
+            if category is not 'episode':
+                f = { 'label' : quote_plus(label.encode("utf8")), 'category' : category, 'url' : url}
+                uri = '%s?addtofavourites="%s"' % ( sys.argv[ 0 ], urllib.urlencode(f) )
 
-            if self.args.favoris == "root":
-                c_items += [ ( "Retirer de Mes Favoris", "RunPlugin(%s)" % uri.replace( "addto", "removefrom" ) ) ]
-            else:
-                c_items += [ ( "Ajouter à Mes Favoris", "RunPlugin(%s)" % uri ) ]
+                if self.args.favoris == "root":
+                    c_items += [ ( "Retirer de Mes Favoris", "RunPlugin(%s)" % uri.replace( "addto", "removefrom" ) ) ]
+                else:
+                    c_items += [ ( "Ajouter à Mes Favoris", "RunPlugin(%s)" % uri ) ]
                 
             if not hidewatched:
                 if not watched:
@@ -868,7 +874,6 @@ class Main( viewtype ):
 
     def _add_context_menu_items( self, c_items, listitem, replaceItems=True ):
         c_items += [ ( LangXBMC( 1045 ), "Addon.OpenSettings(plugin.video.illicoweb)" ) ]
-
         listitem.addContextMenuItems( c_items, replaceItems )        
 
     '''
@@ -895,7 +900,7 @@ class Info:
     def __init__( self, *args, **kwargs ):
         # update dict with our formatted argv
         addon_log('__init__ addon received: %s' % sys.argv[ 2 ][ 1: ].replace( "&", ", " ).replace("%22",'"'))
-        try: exec "self.__dict__.update(%s)" % ( sys.argv[ 2 ][ 1: ].replace( "&", ", " ).replace("%22",'"'), )
+        try: exec "self.__dict__.update(%s)" % ( sys.argv[ 2 ][ 1: ].replace( "&", ", " ).replace("%22",'"'))
         except: print_exc()
         # update dict with custom kwargs
         self.__dict__.update( kwargs )
