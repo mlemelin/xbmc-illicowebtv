@@ -203,13 +203,18 @@ class Main( viewtype ):
             url = unquote_plus(self.args.channel).replace( " ", "+" )
 
             shows, fanart, livelist = self._getShows(url)
+            
             listitems = []
-            for i in shows:
-                if 'submenus' in i:
-                    for show in i['submenus']:
-                        self._addShowToChannel(show, listitems, fanart)
-                else:
-                    self._addShowToChannel(i, listitems, fanart)
+            if 'channels' in shows:
+                for channel in shows['channels']:
+                    self._addChannelToGalaxie(channel, listitems, fanart)
+            else:
+                for i in shows:
+                    if 'submenus' in i:
+                        for show in i['submenus']:
+                            self._addShowToChannel(show, listitems, fanart)
+                    else:
+                        self._addShowToChannel(i, listitems, fanart)
             
             if listitems:
                 # Sort list by ListItem Label
@@ -395,6 +400,24 @@ class Main( viewtype ):
         except:
             print_exc()
     
+    def _addChannelToGalaxie(self, channel, listitems, fanart, url=None):
+        label = channel['name']
+        OK = False
+        try:
+            channelUrl = url or channel['orderURI']
+            uri = sys.argv[ 0 ]
+            item = ( label, '' , 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/logos/' + channel['image'])
+            url = '%s?live="%s"' %( uri, channelUrl  )
+            listitem = xbmcgui.ListItem( *item )
+            listitem.setProperty( 'playLabel', label )
+            listitem.setProperty( 'playThumb', 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/logos/' + channel['image'] )
+            listitem.setProperty( "fanart_image", fanart)
+            self._add_context_menu( label, channelUrl, 'galaxie', listitem, False, True )
+            listitems.append( ( url, listitem, True ) )
+        except:
+            print_exc()
+            
+    
     
     def _addShowToChannel(self, season, listitems, fanart, url=None):
         label = season['label']
@@ -540,25 +563,45 @@ class Main( viewtype ):
                    'Referer' : 'https://illicoweb.videotron.com/accueil'}
         values = {}
         data = getRequest(url,urllib.urlencode(values),headers)
-
+      
         # url format: http://illicoweb.videotron.com/illicoservice/url?logicalUrl=/chaines/ChannelName
         addon_log("Getting fanart from URL: " + url)
         fanart = self._getChannelFanartImg(data)
 
-        # Add LiveTV to top of show list
         i = simplejson.loads(data)['body']['main']['provider']
+        
         livelist = []
-        self._addLiveChannel(livelist, i, '%s?live="%s"', fanart) 
+        if i['name'] == 'Galaxie':
+            shows = i
+        else:
+            # Add LiveTV to top of show list
+            self._addLiveChannel(livelist, i, '%s?live="%s"', fanart) 
         
-        data = self._getChannelShowsJSON(data)
-        # No onDemand content? do nothing
-        if data is None:
-            return
-        
-        shows = simplejson.loads(data)['body']['main']['submenus']
+            data = self._getChannelShowsJSON(data)
+            # No onDemand content? do nothing
+            if data is None:
+                return
+            
+            shows = simplejson.loads(data)['body']['main']['submenus']
         
         return shows, fanart, livelist
-    
+
+    def _getGalaxie(self, url, label):
+        self._checkCookies()
+
+        url = 'http://illicoweb.videotron.com/illicoservice/url?logicalUrl=/chaines/Galaxie' #+unquote_plus(url).replace( " ", "+" )
+        headers = {'User-agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0',
+                   'Referer' : 'https://illicoweb.videotron.com/accueil'}
+        values = {}
+        data = getRequest(url,urllib.urlencode(values),headers)
+        #data = self._getChannelShowsJSON(data)
+        
+        channels = simplejson.loads(data)['body']['main']['provider']['channels']   
+
+        for i in channels:
+            if i['name'] == label:
+                return i
+        
     def _getShow(self, url, label):
         self._checkCookies()
 
@@ -694,6 +737,7 @@ class Main( viewtype ):
         item.setPath(final_url)
         
         player = xbmc.Player( xbmc.PLAYER_CORE_DVDPLAYER )
+        #player = xbmc.Player( xbmc.PLAYER_CORE_AUTO )
         player.play(final_url, item)
         
         return True
@@ -789,6 +833,11 @@ class Main( viewtype ):
                         i['name'] = label
                         i['link']['uri'] = i['orderURI']
                         self._addChannel(listitems, i, '%s?live="%s"')
+                
+                elif category == 'galaxie':
+                    i = self._getGalaxie(url, label)
+                    if i:
+                        self._addChannelToGalaxie(i, listitems, "", url)
                         
                 elif category == 'show':
                     i = self._getShow(url, label)
