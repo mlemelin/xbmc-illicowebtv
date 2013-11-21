@@ -80,6 +80,7 @@ class Service(xbmc.Player):
         addon_log('Resume file: %s' % self.RESUME_FILE)
         
         addon_log('Starting...')
+        xbmcgui.Window(10000).setProperty('plugin.video.illicoweb_running', 'True')
 
 
     def reset(self):
@@ -126,10 +127,13 @@ class Service(xbmc.Player):
                 if not self.live == 'true' and self.pid in self.resume.keys():
                     bookmark = self.resume[self.pid]
                     if not (self._sought and (bookmark - 30 > 0)):
-                        question = 'Reprendre la position %s?' % (format_time(bookmark))
+                        #question = 'Reprendre la position %s?' % (format_time(bookmark))
                         restart = xbmcgui.Dialog()
-                        restart = restart.yesno(self.title, '', question, '', 'Continuer', 'Recommencer' )
-                        if not restart: self.seekTime(bookmark)
+                        #restart = restart.yesno(self.title, '', question, '', 'Continuer', 'Recommencer' )
+                        #if not restart: self.seekTime(bookmark)
+                        restart = restart.select(self.title, ['Continuer de la position %s' % (format_time(bookmark)), 'Recommencer du debut'])
+                        if not restart == 'Recommencer du debut':
+                            self.seekTime(bookmark)
                         self._sought = True
 
     
@@ -240,5 +244,6 @@ while not xbmc.abortRequested:
         monitor._lastPos = monitor.getTime()
         xbmc.sleep(1000)
     xbmc.sleep(1000)
-addon_log('Service: shutting down...')
+addon_log('Shutting down...')
+xbmcgui.Window(10000).clearProperty('plugin.video.illicoweb_running')
         

@@ -132,6 +132,10 @@ class Main( viewtype ):
         self.args = Info()
         self.watched = getWatched()
 
+        if not xbmcgui.Window(10000).getProperty('plugin.video.illicoweb_running') == 'True':
+            addon_log('** Service not running **')
+            xbmc.executescript(os.path.join(xbmc.translatePath(ADDON.getAddonInfo('path')), 'service.py'))
+        
         if self.args.isempty():
             self._login()
             self._add_directory_root()
@@ -948,7 +952,7 @@ class Main( viewtype ):
 class Info:
     def __init__( self, *args, **kwargs ):
         # update dict with our formatted argv
-        addon_log('__init__ addon received: %s' % sys.argv[ 2 ][ 1: ].replace( "&", ", " ).replace("%22",'"'))
+        #addon_log('__init__ addon received: %s' % sys.argv[ 2 ][ 1: ].replace( "&", ", " ).replace("%22",'"'))
         try: exec "self.__dict__.update(%s)" % ( sys.argv[ 2 ][ 1: ].replace( "&", ", " ).replace("%22",'"'))
         except: print_exc()
         # update dict with custom kwargs
