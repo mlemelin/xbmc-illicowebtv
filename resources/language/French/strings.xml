@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+  <string id="30001">Incapable d'obtenir</string>
+  <string id="30002">Echec de l'opération - </string>
+  <string id="30003">-- En Direct --</string>
+  <string id="30004">Votre nom d'utiliateur ou mot de passe sont incorrects.</string>
+  <string id="30041">Veuillez mettre à jour dans les options.</string>
+  <string id="30005">Retirer des favoris IllicoTV</string>
+  <string id="30006">Ajouter aux favoris IllicoTV</string>
+  <string id="30007">-- Mes Favoris IllicoTV --</string>
+  <string id="30008">Poursuivre la lecture?</string>
+  <string id="30009">Continuer à</string>
+  <string id="30010">Recommencer</string>
+  <string id="30011">Général</string>
+  <string id="30012">Nom d'utilisateur</string>
+  <string id="30013">Mot de passe</string>
+  <string id="30014">Activer la sauvegarde de position de lecture</string>
+  <string id="30015">Activer le déboggage</string>
+  <string id="30016">Délai dépassé. Veuillez réessayer.</string>
+</strings>
+

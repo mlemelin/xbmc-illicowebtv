@@ -1,3 +1,18 @@
+# *  This Program is free software; you can redistribute it and/or modify
+# *  it under the terms of the GNU General Public License as published by
+# *  the Free Software Foundation; either version 2, or (at your option)
+# *  any later version.
+# *
+# *  This Program is distributed in the hope that it will be useful,
+# *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+# *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# *  GNU General Public License for more details.
+# *
+# *  You should have received a copy of the GNU General Public License
+# *  along with XBMC; see the file COPYING. If not, write to
+# *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+# *  http://www.gnu.org/copyleft/gpl.html
+
 import os
 import sys
 import xbmc
@@ -10,6 +25,8 @@ from xbmcaddon import Addon
 ADDON = Addon( "plugin.video.illicoweb" )
 ADDON_CACHE = xbmc.translatePath( ADDON.getAddonInfo( "profile" ) )
 DEBUG = ADDON.getSetting('debug')
+
+LANGUAGE = ADDON.getLocalizedString
 
 def addon_log(string):
     #if DEBUG == 'true':
@@ -127,13 +144,10 @@ class Service(xbmc.Player):
                 if not self.live == 'true' and self.pid in self.resume.keys():
                     bookmark = self.resume[self.pid]
                     if not (self._sought and (bookmark - 30 > 0)):
-                        #question = 'Reprendre la position %s?' % (format_time(bookmark))
+                        question = LANGUAGE(30008) #'Reprendre la position %s?' % (format_time(bookmark))
                         restart = xbmcgui.Dialog()
-                        #restart = restart.yesno(self.title, '', question, '', 'Continuer', 'Recommencer' )
-                        #if not restart: self.seekTime(bookmark)
-                        restart = restart.select(self.title, ['Continuer de la position %s' % (format_time(bookmark)), 'Recommencer du debut'])
-                        if not restart == 'Recommencer du debut':
-                            self.seekTime(bookmark)
+                        restart = restart.yesno(self.title, '', question, '', LANGUAGE(30009)+' '+format_time(bookmark), LANGUAGE(30010))
+                        if not restart: self.seekTime(bookmark)
                         self._sought = True
 
     

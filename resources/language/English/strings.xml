@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+  <string id="30001">Unable to retrieve</string>
+  <string id="30002">Failed with error code - </string>
+  <string id="30003">-- Live TV --</string>
+  <string id="30004">Your username or password is incorrect.</string>
+  <string id="30041">Please update your credentials in addon settings.</string>
+  <string id="30005">Remove from My IllicoTV Favourites</string>
+  <string id="30006">Add to My IllicoTV Favourites</string>
+  <string id="30007">-- My IllicoTV Favourites --</string>
+  <string id="30008">Resume playback?</string>
+  <string id="30009">Resume from</string>
+  <string id="30010">Restart from beginning</string>
+  <string id="30011">General</string>
+  <string id="30012">Username</string>
+  <string id="30013">Password</string>
+  <string id="30014">Enable resuming playback position</string>
+  <string id="30015">Enable debugging</string>
+  <string id="30016">Timeout! Try again.</string>
+</strings>
+

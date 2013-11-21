@@ -1,5 +1,20 @@
 # -*- coding: utf-8 -*-
 
+# *  This Program is free software; you can redistribute it and/or modify
+# *  it under the terms of the GNU General Public License as published by
+# *  the Free Software Foundation; either version 2, or (at your option)
+# *  any later version.
+# *
+# *  This Program is distributed in the hope that it will be useful,
+# *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+# *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# *  GNU General Public License for more details.
+# *
+# *  You should have received a copy of the GNU General Public License
+# *  along with XBMC; see the file COPYING. If not, write to
+# *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+# *  http://www.gnu.org/copyleft/gpl.html
+
 import os
 import re
 import sys
@@ -23,7 +38,7 @@ from urlparse import urlparse
 
 ADDON = xbmcaddon.Addon(id='plugin.video.illicoweb')
 ADDON_NAME = ADDON.getAddonInfo( "name" )
-ADDON_VERSION = "1.2"
+ADDON_VERSION = "1.3.0"
 ADDON_CACHE = xbmc.translatePath( ADDON.getAddonInfo( "profile" ) )
 
 COOKIE = os.path.join(ADDON_CACHE, 'cookie')
@@ -36,8 +51,8 @@ USERNAME = ADDON.getSetting( "username" )
 PASSWORD = ADDON.getSetting( "password" )
 DEBUG = ADDON.getSetting('debug')
 
-LangXBMC    = xbmc.getLocalizedString
-Language = ADDON.getLocalizedString
+LANGXBMC = xbmc.getLocalizedString
+LANGUAGE = ADDON.getLocalizedString
 
 def addon_log(string):
     if DEBUG == 'true':
@@ -78,7 +93,7 @@ def getRequest(url, data=None, headers=None):
             if 'highlights.xml' in url:
                 return
         if reason:
-            xbmc.executebuiltin("XBMC.Notification("+Language(30015)+","+Language(30019)+reason+",10000,"+ICON+")")
+            xbmc.executebuiltin("XBMC.Notification("+LANGUAGE(30001)+","+LANGUAGE(30002)+reason+",10000,"+ICON+")")
         return  
 
 def getWatched():
@@ -278,7 +293,7 @@ class Main( viewtype ):
     def _addLiveChannel(self, listitems, i, url, fanart):
         OK = False                
         try:
-            label = '-- En Direct / Live TV --' #i['name']
+            label = LANGUAGE(30003) #'-- En Direct / Live TV --'
             episodeUrl = i['orderURI'] 
             uri = sys.argv[ 0 ]
             item = ( label, '', 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/logos/' + i['image'])
@@ -763,7 +778,8 @@ class Main( viewtype ):
             login = self._login()
 
         if not login:
-            xbmcgui.Dialog().ok(ADDON_NAME, "Votre nom d'usager ou mot de passe est incorrect.\nAllez dans les options du plugin pour les mettre à jour.")
+            xbmcgui.Dialog().ok(ADDON_NAME, '%s\n%s' % (LANGUAGE(30004),LANGUAGE(30041)))
+            xbmc.executebuiltin("Addon.OpenSettings(plugin.video.illicoweb)")
             exit(0)
 
         if login == 'old':
@@ -783,7 +799,8 @@ class Main( viewtype ):
             addon_log('Login to get cookies!')
 
             if not USERNAME or not PASSWORD:
-                xbmcgui.Dialog().ok(ADDON_NAME, "Votre nom d'usager ou mot de passe est incorrect.\nAllez dans les options du plugin pour les mettre à jour.")
+                xbmcgui.Dialog().ok(ADDON_NAME, LANGUAGE(30004))
+                xbmc.executebuiltin("Addon.OpenSettings(plugin.video.illicoweb)")
                 exit(0)
 
             # Get the cookie first
@@ -873,21 +890,24 @@ class Main( viewtype ):
         values = {}
         data = getRequest(url,urllib.urlencode(values),headers)
 
-        jsonList = simplejson.loads(data)['body']['main']
-        listitems = []
-        
-        if os.path.exists( FAVOURITES_XML ):
-            uri = sys.argv[ 0 ]
-            item = ('-- Mes Favoris IllicoTV --', '', 'DefaultAddonScreensaver.png')
-            listitem = xbmcgui.ListItem( *item )
-            listitem.setProperty( "fanart_image", 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/custom/presse1.jpg')
-            url = '%s?favoris="root"' %uri 
-            listitems.append(( url, listitem, True ))
-        
-        OK = False
-        for i in jsonList:
-            self._addChannel(listitems, i, '%s?channel="%s"')
-
+        try:
+            jsonList = simplejson.loads(data)['body']['main']
+            listitems = []
+            
+            if os.path.exists( FAVOURITES_XML ):
+                uri = sys.argv[ 0 ]
+                item = (LANGUAGE(30007), '', 'DefaultAddonScreensaver.png')
+                listitem = xbmcgui.ListItem( *item )
+                listitem.setProperty( "fanart_image", 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/custom/presse1.jpg')
+                url = '%s?favoris="root"' %uri 
+                listitems.append(( url, listitem, True ))
+            
+            OK = False
+            for i in jsonList:
+                self._addChannel(listitems, i, '%s?channel="%s"')
+        except:
+            xbmcgui.Dialog().ok(ADDON_NAME, LANGUAGE(30016))
+    
         if listitems:
             addon_log("Adding Channels to Root")
             OK = self._add_directory_items( listitems )
@@ -898,7 +918,7 @@ class Main( viewtype ):
     '''
     def _add_context_menu( self, label, url, category, listitem, watched=False, hidewatched=False ):
         try:
-            c_items = [] #[ ( LangXBMC( 20351 ), "Action(Info)" ) ]
+            c_items = [] #[ ( LANGXBMC( 20351 ), "Action(Info)" ) ]
 
             #add to my favoris
             if category is not 'episode':
@@ -906,9 +926,9 @@ class Main( viewtype ):
                 uri = '%s?addtofavourites="%s"' % ( sys.argv[ 0 ], urllib.urlencode(f) )
 
                 if self.args.favoris == "root":
-                    c_items += [ ( "Retirer de Mes Favoris", "RunPlugin(%s)" % uri.replace( "addto", "removefrom" ) ) ]
+                    c_items += [ ( LANGUAGE(30005), "RunPlugin(%s)" % uri.replace( "addto", "removefrom" ) ) ]
                 else:
-                    c_items += [ ( "Ajouter à Mes Favoris", "RunPlugin(%s)" % uri ) ]
+                    c_items += [ ( LANGUAGE(30006), "RunPlugin(%s)" % uri ) ]
                 
             if not hidewatched:
                 if not watched:
@@ -919,14 +939,14 @@ class Main( viewtype ):
                     all = 'True'
                 else: all = 'False'
                 uri = '%s?%s="%s*%s"&all=%s' % ( sys.argv[ 0 ], action, url, label, all )
-                c_items += [ ( LangXBMC( i_label ), "RunPlugin(%s)" % uri ) ]
+                c_items += [ ( LANGXBMC( i_label ), "RunPlugin(%s)" % uri ) ]
 
             self._add_context_menu_items( c_items, listitem )
         except:
             print_exc()
 
     def _add_context_menu_items( self, c_items, listitem, replaceItems=True ):
-        c_items += [ ( LangXBMC( 1045 ), "Addon.OpenSettings(plugin.video.illicoweb)" ) ]
+        c_items += [ ( LANGXBMC( 1045 ), "Addon.OpenSettings(plugin.video.illicoweb)" ) ]
         listitem.addContextMenuItems( c_items, replaceItems )        
 
     '''
