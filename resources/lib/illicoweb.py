@@ -954,7 +954,6 @@ class Main( viewtype ):
         try:
             c_items = [] #[ ( LANGXBMC( 20351 ), "Action(Info)" ) ]
     
-            whatisthis(label)
             #add to my favoris
             if category is not 'episode':
                 # all strings must be unicode but encoded, if necessary, as utf-8 to be passed on to urlencode!!
