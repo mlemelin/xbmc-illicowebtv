@@ -58,7 +58,6 @@ def addon_log(string):
     if DEBUG == 'true':
         xbmc.log("[Illicoweb-%s]: %s" %(ADDON_VERSION, string))
 
-
 def getRequest(url, data=None, headers=None):
     if not xbmcvfs.exists(COOKIE):
         addon_log('Creating COOKIE!')
@@ -247,7 +246,7 @@ class Main( viewtype ):
             listitems = livelist + listitems
             addon_log("Adding Shows to Channel")
             OK = self._add_directory_items( listitems )
-            self._set_content( OK, "movies", False )
+            self._set_content( OK, "episodes", False )
 
         elif self.args.show:
             OK = False
@@ -258,7 +257,7 @@ class Main( viewtype ):
                 listitems = self.natural_sort(listitems, True)
                 addon_log("Adding Seasons to Show")
                 OK = self._add_directory_items( listitems )
-            self._set_content( OK, "movies", False )
+            self._set_content( OK, "episodes", False )
 
         elif self.args.season:
             url = unquote_plus(self.args.season).replace( " ", "+" )
@@ -275,10 +274,30 @@ class Main( viewtype ):
             episodeUrl = i['link']['uri']
 
             uri = sys.argv[ 0 ]
-            item = ( label, '', 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/logos/' + i['image'])
+            item = ( label, '', 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/logos/' + i['image'], 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/logos/' + i['image'])
             url = url %( uri, episodeUrl  )
             
+            infoLabels = {
+                "tvshowtitle": label,
+                "title":       label,
+                #"genre":       genreTitle,
+                "plot":        i[ 'description' ] or ""
+                #"season":      int(season) or -1
+                #"episode":     episode[ "EpisodeNumber" ] or -1,
+                #"year":        int( episode[ "Year" ] or "0" ),
+                #"Aired":       episode[ "AirDateLongString" ] or "",
+                #"mpaa":        episode[ "Rating" ] or "",
+                #"duration":    episode[ "LengthString" ] or "",
+                #"studio":      episode[ "Copyright" ] or "",
+                #"castandrole": scraper.setCastAndRole( episode ) or [],
+                #"writer":      episode[ "PeopleWriter" ] or episode[ "PeopleAuthor" ] or "",
+                #"director":    episode[ "PeopleDirector" ] or "",
+            }
+            
+            
             listitem = xbmcgui.ListItem( *item )
+            listitem.setInfo( "Video", infoLabels )
+
             listitem.setProperty( 'playLabel', label )
             listitem.setProperty( 'playThumb', 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/logos/' + i['image'] )
             listitem.setProperty( "fanart_image", 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/custom/presse1.jpg') #'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/channels/' + ep['largeLogo'])
@@ -318,7 +337,7 @@ class Main( viewtype ):
             listitems = self.natural_sort(listitems, True)
             addon_log("Adding Episodes to Season")
             OK = self._add_directory_items( listitems )
-        self._set_content( OK, "movies", False )
+        self._set_content( OK, "episodes", False )
     
     def _addEpisode(self, ep, listitems):
         label = ep['title']
@@ -326,20 +345,21 @@ class Main( viewtype ):
         OK = False
         try:
             uri = sys.argv[ 0 ]
-            item = ( label,     '', 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/thumb/'  + ep['image']) #'DefaultAddonSubtitles.png')
+            item = ( label, '', "DefaultTVShows.png", 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/player/'  + ep['image']) #'DefaultAddonSubtitles.png')
             url = '%s?episode="%s"' %( uri, unquote_plus(seasonUrl.replace( " ", "+" ) ) )
+            
             
             infoLabels = {
                 "tvshowtitle": label,
-                "title":       label
+                "title":       label,
                 #"genre":       genreTitle,
-                #"plot":        episode[ "Description" ] or "",
-                #"season":      int(season) or -1
-                #"episode":     episode[ "EpisodeNumber" ] or -1,
-                #"year":        int( episode[ "Year" ] or "0" ),
+                "plot":        ep[ 'description' ] or "",
+                "season":      int(ep['seasonNo']) or -1,
+                "episode":     int(ep[ 'episodeNo' ]) or -1,
+                "year":        int( ep[ "released" ] or "0" ),
                 #"Aired":       episode[ "AirDateLongString" ] or "",
-                #"mpaa":        episode[ "Rating" ] or "",
-                #"duration":    episode[ "LengthString" ] or "",
+                "mpaa":        ep[ 'rating' ] or "",
+                "duration":    str(ep[ 'lengthInMinutes' ]) or "",
                 #"studio":      episode[ "Copyright" ] or "",
                 #"castandrole": scraper.setCastAndRole( episode ) or [],
                 #"writer":      episode[ "PeopleWriter" ] or episode[ "PeopleAuthor" ] or "",
@@ -354,16 +374,15 @@ class Main( viewtype ):
             listitem.setInfo( "Video", infoLabels )
             
             listitem.setProperty( 'playLabel', label )
-            listitem.setProperty( 'playThumb', 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/thumb/' + ep['image'] )
+            listitem.setProperty( 'playThumb', 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/player/' + ep['image'] )
             listitem.setProperty( "fanart_image", xbmc.getInfoLabel( "ListItem.Property(fanart_image)" )) #'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/thumb/' + ep['image'])
             
             #set property for player set watched
             strwatched = "%s*%s" % ( seasonUrl, label )
             listitem.setProperty( "strwatched", strwatched )
-            listitem.setProperty( "playLabel", label )
             
             self._add_context_menu(  label, unquote_plus(seasonUrl.replace( " ", "+" ) ), 'episode', listitem, watched )
-            listitems.append( ( url, listitem, True ) )
+            listitems.append( ( url, listitem, False ) )
         except:
             print_exc()
 
@@ -375,21 +394,23 @@ class Main( viewtype ):
         OK = False
         try:
             uri = sys.argv[ 0 ]
-            thumb = 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/thumb/' + i['image']
+            thumb = 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/player/' + i['image']
             item = ( label,     '',  thumb)
             url = '%s?season="%s"' %( uri, seasonUrl )
 
             listitem = xbmcgui.ListItem( *item )
+            description = ''
+            if 'description' in i: description = i['description']
             infoLabels = {
                 "tvshowtitle": label,
-                "title":       label
-                #"genre":       genre,
-                #"year":        int( year.split()[ 0 ] ),
+                "title":       label,
+                "genre":       i['genre'],
+                "year":        int( i['released'] ),
                 #"tagline":     ( STRING_FOR_ALL, "" )[ bool( GeoTargeting ) ],
-                #"duration":    emission.get( "CategorieDuree" ) or "",
+                "duration":    i['lengthInMinutes'] or "",
                 #"episode":     NombreEpisodes,
-                #"season":      -1,
-                #"plot":        emission.get( "Description" ) or "",
+                "season":      int(i['seasonNo']) or -1,
+                "plot":        description,
                 #"premiered":   emission.get( "premiered" ) or "",
                 }
             
@@ -408,7 +429,7 @@ class Main( viewtype ):
             overlay = ( xbmcgui.ICON_OVERLAY_NONE, xbmcgui.ICON_OVERLAY_WATCHED )[ playCount ]
             infoLabels.update( { "playCount": playCount, "overlay": overlay } )
             
-            listitem.setInfo( "Video", infoLabels )
+            listitem.setInfo( "Music", infoLabels )
 
             listitem.setProperty( 'playLabel', label )
             listitem.setProperty( 'playThumb', 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/thumb/' + i['image'] )
@@ -427,12 +448,19 @@ class Main( viewtype ):
             uri = sys.argv[ 0 ]
             item = ( label, '' , 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/logos/' + channel['image'])
             url = '%s?live="%s"' %( uri, channelUrl  )
+            
+            infoLabels = {
+                "title":       label
+            }
+            
             listitem = xbmcgui.ListItem( *item )
+            listitem.setInfo( "Video", infoLabels )
+
             listitem.setProperty( 'playLabel', label )
             listitem.setProperty( 'playThumb', 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/logos/' + channel['image'] )
             listitem.setProperty( "fanart_image", fanart)
             self._add_context_menu( label, channelUrl, 'galaxie', listitem, False, True )
-            listitems.append( ( url, listitem, True ) )
+            listitems.append( ( url, listitem, False ) )
         except:
             print_exc()
             
@@ -510,7 +538,10 @@ class Main( viewtype ):
     def _getChannel(self, label):
         self._checkCookies()
 
-        url = 'https://illicoweb.videotron.com/illicoservice/channels/user?localeLang=fr'
+        url = 'https://illicoweb.videotron.com/illicoservice/channels/user?localeLang='
+        if xbmc.getLanguage() == "English":
+            url = url + 'en'
+        else: url = url + 'fr'
         headers = {'User-agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0',
                    'Referer' : 'https://illicoweb.videotron.com/accueil'}
         values = {}
@@ -879,12 +910,15 @@ class Main( viewtype ):
         if listitems:
             addon_log("Adding Favourites")
             OK = self._add_directory_items( listitems )
-        self._set_content( OK, "movies", False )                
+        self._set_content( OK, "episodes", False )                
                 
     def _add_directory_root( self ):
         self._checkCookies()
 
-        url = 'https://illicoweb.videotron.com/illicoservice/channels/user?localeLang=fr'
+        url = 'https://illicoweb.videotron.com/illicoservice/channels/user?localeLang='
+        if xbmc.getLanguage() == "English":
+            url = url + 'en'
+        else: url = url + 'fr'
         headers = {'User-agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0',
                    'Referer' : 'https://illicoweb.videotron.com/accueil'}
         values = {}
@@ -911,7 +945,7 @@ class Main( viewtype ):
         if listitems:
             addon_log("Adding Channels to Root")
             OK = self._add_directory_items( listitems )
-        self._set_content( OK, "movies", False )
+        self._set_content( OK, "episodes", False )
 
     '''
     ' Section de gestion des menus
@@ -919,11 +953,15 @@ class Main( viewtype ):
     def _add_context_menu( self, label, url, category, listitem, watched=False, hidewatched=False ):
         try:
             c_items = [] #[ ( LANGXBMC( 20351 ), "Action(Info)" ) ]
-
+    
+            whatisthis(label)
             #add to my favoris
             if category is not 'episode':
-                f = { 'label' : quote_plus(label.encode("utf8")), 'category' : category, 'url' : url}
-                uri = '%s?addtofavourites="%s"' % ( sys.argv[ 0 ], urllib.urlencode(f) )
+                # all strings must be unicode but encoded, if necessary, as utf-8 to be passed on to urlencode!!
+                if isinstance(label, unicode):
+                    labelUri = label.encode('utf-8')
+                f = { 'label' : labelUri, 'category' : category, 'url' : url}
+                uri = '%s?addtofavourites="%s"' % ( sys.argv[ 0 ], urllib.urlencode(f) ) #urlencode(f) )
 
                 if self.args.favoris == "root":
                     c_items += [ ( LANGUAGE(30005), "RunPlugin(%s)" % uri.replace( "addto", "removefrom" ) ) ]
