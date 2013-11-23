@@ -302,7 +302,10 @@ class Main( viewtype ):
             listitem.setProperty( 'playThumb', 'https://static-illicoweb.videotron.com/illicoweb/static/webtv/images/logos/' + i['image'] )
             listitem.setProperty( "fanart_image", 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/custom/presse1.jpg') #'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/channels/' + ep['largeLogo'])
             
-            self._add_context_menu( label, episodeUrl, 'channel', listitem, False, True )
+            if '?live=' in url:
+                category = 'live'
+            else: category = 'channel'
+            self._add_context_menu( label, episodeUrl, category, listitem, False, True )
             listitems.append( ( url, listitem, True ) )
         except:
             print_exc()
