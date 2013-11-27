@@ -528,7 +528,7 @@ class Main( viewtype ):
         values = {}
 
         # url format: http://illicoweb.videotron.com/illicoservice/url?logicalUrl=/channels/<channelName>/<showID>/<showName>
-        url = 'http://illicoweb.videotron.com/illicoservice/url?logicalUrl='+url
+        url = 'http://illicoweb.videotron.com/illicoservice/url?logicalUrl=' +url
         data = getRequest(url,urllib.urlencode(values),headers)
 
         sections = simplejson.loads(data)['body']['main']['sections']
@@ -611,13 +611,13 @@ class Main( viewtype ):
     def _getShows(self, url):
         self._checkCookies()
 
-        url = 'http://illicoweb.videotron.com/illicoservice/url?logicalUrl='+unquote_plus(url).replace( " ", "+" )
+        url = 'http://illicoweb.videotron.com/illicoservice/url?logicalUrl=' +unquote_plus(url).replace( " ", "+" )
         headers = {'User-agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0',
                    'Referer' : 'https://illicoweb.videotron.com/accueil'}
         values = {}
         data = getRequest(url,urllib.urlencode(values),headers)
       
-        # url format: http://illicoweb.videotron.com/illicoservice/url?logicalUrl=/chaines/ChannelName
+        # url format: http://illicoweb.videotron.com/illicoservice/url?logicalUrl=chaines/ChannelName
         addon_log("Getting fanart from URL: " + url)
         fanart = self._getChannelFanartImg(data)
 
@@ -723,17 +723,19 @@ class Main( viewtype ):
             if 'widgetType' in i:
                 if i['widgetType'] == 'PLAYER':
                     url = i['contentDownloadURL']
-
-        # url format: https://illicoweb.videotron.com/illicoservice/page/section/0000
-        url = 'https://illicoweb.videotron.com/illicoservice'+unquote_plus(url.replace( " ", "+" ))
-        
-        headers = {'User-agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0',
-            'Referer' : 'https://illicoweb.videotron.com/accueil'}
-        values = {}
-        data = getRequest(url,urllib.urlencode(values),headers)
-        img = simplejson.loads(data)['body']['main'][0]
-        return 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/custom/' + img['image']    
-    
+        try:
+            # url format: https://illicoweb.videotron.com/illicoservice/page/section/0000
+            url = 'https://illicoweb.videotron.com/illicoservice'+unquote_plus(url.replace( " ", "+" ))
+            
+            headers = {'User-agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0',
+                'Referer' : 'https://illicoweb.videotron.com/accueil'}
+            values = {}
+            data = getRequest(url,urllib.urlencode(values),headers)
+            img = simplejson.loads(data)['body']['main'][0]
+            return 'http://static-illicoweb.videotron.com/illicoweb/static/webtv/images/content/custom/' + img['image']    
+        except:
+            return ''
+         
     # --------------------------------------------------------------------------------------------
     # [ End of scrappers -------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------
